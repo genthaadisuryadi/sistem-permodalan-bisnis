@@ -51,11 +51,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 
     <style>
-        body {
+        html, body {
             background-color: #F8FAFC;
             color: #0F172A;
             font-family: 'Plus Jakarta Sans', sans-serif;
-            overflow-x: hidden;
+            overflow-x: clip;
         }
 
         /* Blinking Typewriter Cursor (Kuning-Biru) */
@@ -64,7 +64,7 @@
             color: #F59E0B;
             font-weight: 700;
             animation: blink 0.85s infinite;
-            margin-left: 3px;
+            margin-left: 2px;
         }
 
         @keyframes blink {
@@ -92,9 +92,79 @@
             border-color: #165297 !important;
             background-color: #EFF6FF !important;
         }
+
+        /* Preloader Grid */
+        .preloader-grid {
+            background-size: 40px 40px;
+            background-image:
+                linear-gradient(to right, rgba(22, 82, 151, 0.065) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(22, 82, 151, 0.065) 1px, transparent 1px);
+        }
+
+        /* =========================================================
+           ZERO-LAYOUT-SHIFT BUILD & TYPEWRITER STYLING
+        ========================================================= */
+        [data-build] {
+            will-change: clip-path, opacity, transform;
+        }
+
+        /* Wrapper teks typing agar tinggi baris tetap terkunci (anti-geser) */
+        .type-shell {
+            position: relative;
+            display: block;
+        }
+        .type-shell-inline {
+            position: relative;
+            display: inline-block;
+        }
+        .type-ghost {
+            visibility: hidden;
+            pointer-events: none;
+            user-select: none;
+        }
+        .type-live {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
     </style>
 </head>
 <body class="bg-ucic-bg text-ucic-ink antialiased selection:bg-ucic-blue selection:text-white relative">
+
+    <!-- ==========================================
+         PRELOADER OVERLAY (SWARM ORBIT INTRO)
+    =========================================== -->
+    <div id="ucic-preloader" class="fixed inset-0 z-50 bg-ucic-bg preloader-grid flex flex-col items-center justify-center transition-opacity duration-500">
+        <div class="relative flex items-center justify-center">
+            <div class="w-40 h-40 rounded-full border border-dashed border-ucic-blue/35 animate-spin" style="animation-duration: 9s;"></div>
+            <div class="w-28 h-28 rounded-full border border-amber-400/50 absolute"></div>
+            
+            <!-- Emblem Logo UCIC AI Center -->
+            <div id="preloader-logo" class="w-16 h-16 rounded-2xl bg-ucic-blue shadow-glow-blue flex items-center justify-center absolute">
+                <svg class="w-11 h-11" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M22 97L53 23C55.5 17.5 64.5 17.5 67 23L82 59H66L59.5 41L37 97H22Z" fill="#FFFFFF"/>
+                    <circle cx="54" cy="68" r="8" stroke="#FFCA28" stroke-width="5.5" fill="#165297"/>
+                    <path d="M62 68H89M69 68L77 82H95" stroke="#FFCA28" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="94" cy="68" r="6.5" fill="#FFCA28"/>
+                    <circle cx="98" cy="82" r="7" fill="#FFCA28"/>
+                    <circle cx="46" cy="87" r="8.5" fill="#FFFFFF"/>
+                    <path d="M53 87H68L77 100H93" stroke="#FFFFFF" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="96" cy="100" r="7" fill="#FFFFFF"/>
+                </svg>
+            </div>
+        </div>
+
+        <div class="mt-8 flex flex-col items-center gap-2.5">
+            <span id="preloader-status" class="font-display text-xs font-bold tracking-[0.2em] uppercase text-ucic-blue">
+                INITIALIZING CANVAS...
+            </span>
+            <div class="w-48 h-1.5 rounded-full bg-slate-200 overflow-hidden">
+                <div id="preloader-bar" class="h-full w-0 bg-gradient-to-r from-ucic-blue to-ucic-yellow rounded-full"></div>
+            </div>
+        </div>
+    </div>
 
     <!-- Ambient Soft Gradient Background -->
     <div class="fixed inset-0 pointer-events-none overflow-hidden -z-10">
@@ -104,21 +174,20 @@
     </div>
 
     <!-- ==========================================
-         SWARM CURSORS CANVAS LAYER (Z-INDEX: 40)
+         UNIFIED CANVAS LAYER: SWARM CURSORS + DRAG-TO-BUILD WIREFRAME
     =========================================== -->
-    <canvas id="swarm-canvas" class="fixed inset-0 pointer-events-none z-40 w-full h-full"></canvas>
+    <canvas id="swarm-canvas" class="fixed inset-0 pointer-events-none z-[60] w-full h-full"></canvas>
 
     <!-- ==========================================
          1. NAVBAR MINIMALIS & FIT KANAN-KIRI
     =========================================== -->
-    <header class="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-slate-200/70">
+    <header id="main-navbar" class="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-slate-200/70">
         <div class="w-full max-w-[1600px] mx-auto px-6 sm:px-10 lg:px-16 xl:px-24 h-20 flex items-center justify-between">
             
             <!-- Brand / Logo UCIC AI Center di Kiri Atas -->
-            <a href="#" class="flex items-center gap-3.5 group focus:outline-none">
+            <a href="#" data-build data-build-name="Nav.Brand" class="flex items-center gap-3.5 group focus:outline-none">
                 <img src="Logo AI Center UCIC.jpg" alt="UCIC AI Center" class="hidden h-11 w-auto object-contain rounded-lg">
 
-                <!-- Logo Vektor Presisi UCIC AI Center -->
                 <div class="flex items-center gap-3">
                     <svg class="w-12 h-12 shrink-0 group-hover:scale-105 transition-transform duration-300 drop-shadow-sm" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <rect width="120" height="120" rx="26" fill="#165297"/>
@@ -139,14 +208,14 @@
             </a>
 
             <!-- Anchor Links -->
-            <nav class="hidden md:flex items-center gap-9 text-[15px] font-medium text-slate-600">
+            <nav data-build data-build-name="Nav.Links" class="hidden md:flex items-center gap-9 text-[15px] font-medium text-slate-600">
                 <a href="#benefit" class="hover:text-ucic-blue transition-colors">Benefit Program</a>
                 <a href="#seleksi" class="hover:text-ucic-blue transition-colors">Alur Seleksi</a>
                 <a href="#mentor" class="hover:text-ucic-blue transition-colors">Board of Mentors</a>
             </nav>
 
             <!-- CTA Button -->
-            <a href="#daftar" class="inline-flex items-center gap-2.5 bg-ucic-blue text-white font-display font-semibold text-sm sm:text-[15px] px-6 py-3 rounded-full hover:bg-ucic-blueLight shadow-glow-blue hover:-translate-y-0.5 transition-all duration-300">
+            <a href="#daftar" data-build data-build-name="Nav.CTA" class="inline-flex items-center gap-2.5 bg-ucic-blue text-white font-display font-semibold text-sm sm:text-[15px] px-6 py-3 rounded-full hover:bg-ucic-blueLight shadow-glow-blue hover:-translate-y-0.5 transition-[transform,background-color,box-shadow] duration-300">
                 <span>Daftar Permodalan</span>
                 <span class="w-6 h-6 rounded-full bg-ucic-yellow text-ucic-navy flex items-center justify-center">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -159,32 +228,24 @@
 
     <main>
         <!-- ==========================================
-             2. HERO SECTION (TYPEWRITER LOOPING + PARALLAX)
+             2. HERO SECTION (TYPEWRITER + DRAG-BUILD CARDS)
         =========================================== -->
-        <section class="relative pt-10 pb-20 lg:pt-16 lg:pb-28 overflow-hidden">
+        <section class="relative pt-12 pb-20 lg:pt-20 lg:pb-28 overflow-hidden">
             <div class="w-full max-w-[1600px] mx-auto px-6 sm:px-10 lg:px-16 xl:px-24">
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-12 xl:gap-16 items-center">
                     
                     <!-- Left Column: Copywriting & Typewriter -->
                     <div class="lg:col-span-7 space-y-6">
-                        <!-- Badge Kecil -->
-                        <div class="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-blue-50/90 border border-blue-200/80 shadow-sm">
-                            <span class="w-2.5 h-2.5 rounded-full bg-ucic-yellow ring-4 ring-amber-400/20"></span>
-                            <span class="text-xs sm:text-sm font-display font-semibold tracking-wide text-ucic-blue">
-                                Program Permodalan & Mentoring Mahasiswa
-                            </span>
-                        </div>
-
-                        <!-- Headline Utama dengan Efek Ketik Looping (Tinggi Dikunci Agar Tidak Goyang) -->
+                        <!-- Headline Utama dengan Efek Ketik Looping -->
                         <div class="flex flex-col justify-center">
-                            <div class="min-h-[96px] sm:min-h-[136px] xl:min-h-[154px] flex items-center">
+                            <div data-build data-build-name="Hero.Headline" class="min-h-[96px] sm:min-h-[136px] xl:min-h-[154px] flex items-center">
                                 <h1 class="font-display font-extrabold text-4xl sm:text-6xl xl:text-[68px] text-ucic-navy tracking-tight leading-[1.1]">
                                     <span id="hero-typewriter"></span><span id="hero-cursor" class="typewriter-cursor">|</span>
                                 </h1>
                             </div>
 
                             <!-- Sub-teks Dinamis Peluang Ide Bisnis -->
-                            <div class="mt-3 flex flex-wrap items-center gap-2.5 text-lg sm:text-2xl font-display font-medium text-slate-600 min-h-[44px]">
+                            <div data-build data-build-name="Hero.SubHeadline" class="mt-3 flex flex-wrap items-center gap-2.5 text-lg sm:text-2xl font-display font-medium text-slate-600 min-h-[44px]">
                                 <span>Komersialisasi siap jalan</span>
                                 <span class="inline-flex items-center px-4 py-1 rounded-full bg-ucic-yellow/25 border border-amber-300/60 text-ucic-navy font-bold">
                                     <span id="sub-typewriter"></span><span class="typewriter-cursor">|</span>
@@ -192,42 +253,44 @@
                             </div>
                         </div>
 
-                        <!-- Deskripsi Singkat -->
-                        <p class="text-base sm:text-lg xl:text-xl text-slate-600 leading-relaxed max-w-3xl font-normal">
-                            Produk <strong class="text-ucic-blue font-semibold">AI Photobooth</strong> sudah 100% selesai dan siap pakai—kamu tidak perlu pusing memikirkan coding dari nol. Ajukan ide komersialisasimu, menangkan pendanaan modal usaha, dan bawa produk ini ke Stage pasar yang lebih luas bersama mentor bisnis kami.
-                        </p>
+                        <!-- Deskripsi Singkat dengan Efek Typing -->
+                        <div data-build data-build-name="Hero.Description" class="max-w-3xl">
+                            <p data-type data-type-speed="12" class="text-base sm:text-lg xl:text-xl text-slate-600 leading-relaxed font-normal">
+                                Produk <strong class="text-ucic-blue font-semibold">AI Photobooth</strong> sudah 100% selesai dan siap pakai—kamu tidak perlu pusing memikirkan coding dari nol. Ajukan ide komersialisasimu, menangkan pendanaan modal usaha, dan bawa produk ini ke Stage pasar yang lebih luas bersama mentor bisnis kami.
+                            </p>
+                        </div>
 
                         <!-- CTA Buttons -->
                         <div class="pt-3 flex flex-col sm:flex-row sm:items-center gap-4">
-                            <a href="#daftar" class="inline-flex items-center justify-center gap-3 bg-ucic-yellow text-ucic-navy font-display font-bold text-base sm:text-lg px-8 py-4 rounded-2xl shadow-glow-yellow hover:bg-amber-300 hover:-translate-y-0.5 transition-all duration-300">
+                            <a href="#daftar" data-build data-build-name="Hero.BtnPrimary" class="inline-flex items-center justify-center gap-3 bg-ucic-yellow text-ucic-navy font-display font-bold text-base sm:text-lg px-8 py-4 rounded-2xl shadow-glow-yellow hover:bg-amber-300 hover:-translate-y-0.5 transition-[transform,background-color,box-shadow] duration-300">
                                 <span>Ajukan Proposal Sekarang</span>
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
                                 </svg>
                             </a>
-                            <a href="#benefit" class="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-2xl bg-white border border-slate-200 font-display font-semibold text-base text-slate-700 hover:border-ucic-blue hover:text-ucic-blue shadow-sm transition-all duration-300">
+                            <a href="#benefit" data-build data-build-name="Hero.BtnSecondary" class="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-2xl bg-white border border-slate-200 font-display font-semibold text-base text-slate-700 hover:border-ucic-blue hover:text-ucic-blue shadow-sm transition-[transform,border-color,color] duration-300">
                                 Pelajari Skema Program
                             </a>
                         </div>
 
                         <!-- Key Metrics Strip -->
                         <div class="pt-6 grid grid-cols-3 gap-4 sm:gap-6 max-w-xl">
-                            <div class="bg-white/80 backdrop-blur-sm p-4 rounded-2xl border border-slate-200/70 shadow-sm">
-                                <div class="font-display font-extrabold text-2xl sm:text-3xl text-ucic-blue">100%</div>
-                                <div class="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">Sistem Siap Pakai</div>
+                            <div data-build data-build-name="Metric.01" class="bg-white/80 backdrop-blur-sm p-4 rounded-2xl border border-slate-200/70 shadow-sm">
+                                <div data-type data-type-speed="45" class="font-display font-extrabold text-2xl sm:text-3xl text-ucic-blue">100%</div>
+                                <div data-type data-type-speed="25" class="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">Sistem Siap Pakai</div>
                             </div>
-                            <div class="bg-white/80 backdrop-blur-sm p-4 rounded-2xl border border-slate-200/70 shadow-sm">
-                                <div class="font-display font-extrabold text-2xl sm:text-3xl text-amber-500">Full</div>
-                                <div class="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">Support Permodalan</div>
+                            <div data-build data-build-name="Metric.02" class="bg-white/80 backdrop-blur-sm p-4 rounded-2xl border border-slate-200/70 shadow-sm">
+                                <div data-type data-type-speed="45" class="font-display font-extrabold text-2xl sm:text-3xl text-amber-500">Full</div>
+                                <div data-type data-type-speed="25" class="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">Support Permodalan</div>
                             </div>
-                            <div class="bg-white/80 backdrop-blur-sm p-4 rounded-2xl border border-slate-200/70 shadow-sm">
-                                <div class="font-display font-extrabold text-2xl sm:text-3xl text-ucic-blue">1-on-1</div>
-                                <div class="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">Mentoring Praktisi</div>
+                            <div data-build data-build-name="Metric.03" class="bg-white/80 backdrop-blur-sm p-4 rounded-2xl border border-slate-200/70 shadow-sm">
+                                <div data-type data-type-speed="45" class="font-display font-extrabold text-2xl sm:text-3xl text-ucic-blue">1-on-1</div>
+                                <div data-type data-type-speed="25" class="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">Mentoring Praktisi</div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Right Column: Modern Floating Card (GSAP Parallax) -->
+                    <!-- Right Column: Modern Floating Card -->
                     <div class="lg:col-span-5 relative mt-6 lg:mt-0">
                         <div id="parallax-container" class="relative mx-auto max-w-lg lg:max-w-none">
                             
@@ -235,7 +298,7 @@
                             <div class="absolute -inset-4 bg-gradient-to-tr from-ucic-blue/15 via-blue-400/10 to-ucic-yellow/25 rounded-[2rem] blur-2xl -z-10"></div>
 
                             <!-- Main Product Card -->
-                            <div id="parallax-card-main" class="bg-white/95 backdrop-blur-md rounded-3xl border border-slate-200/80 p-6 shadow-soft-lg relative z-10">
+                            <div id="parallax-card-main" data-build data-build-name="Preview.EngineCard" class="bg-white/95 backdrop-blur-md rounded-3xl border border-slate-200/80 p-6 shadow-soft-lg relative z-10">
                                 <!-- Top Bar Mockup -->
                                 <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
                                     <div class="flex items-center gap-2">
@@ -250,7 +313,7 @@
                                 </div>
 
                                 <!-- Visual Preview Area -->
-                                <div class="relative aspect-[16/11] rounded-2xl overflow-hidden bg-slate-900 mb-5 group">
+                                <div data-build data-build-name="Preview.Viewport" class="relative aspect-[16/11] rounded-2xl overflow-hidden bg-slate-900 mb-5 group">
                                     <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1000&q=80" 
                                          alt="AI Photobooth Commercialization" 
                                          class="w-full h-full object-cover opacity-90 group-hover:scale-105 transition-transform duration-700">
@@ -258,7 +321,7 @@
                                         <span class="inline-block w-fit px-2.5 py-0.5 rounded-md bg-ucic-yellow text-ucic-navy text-[11px] font-display font-bold uppercase tracking-wider mb-1.5">
                                             Instant Generative Style
                                         </span>
-                                        <p class="text-white font-display font-bold text-lg sm:text-xl leading-snug">
+                                        <p data-type data-type-speed="20" class="text-white font-display font-bold text-lg sm:text-xl leading-snug">
                                             Sistem Kamera, QR Ticket, & Print Otomatis Siap Dipakai Bisnis
                                         </p>
                                     </div>
@@ -266,32 +329,32 @@
 
                                 <!-- Specs Grid -->
                                 <div class="grid grid-cols-2 gap-3.5 text-xs">
-                                    <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-100">
+                                    <div data-build data-build-name="Preview.Spec.01" class="p-3.5 rounded-2xl bg-slate-50 border border-slate-100">
                                         <span class="text-slate-400 font-medium block mb-0.5">Target Eksekusi</span>
-                                        <span class="font-display font-bold text-ucic-navy text-sm">Event, Pop-Up & B2B</span>
+                                        <span data-type data-type-speed="26" class="font-display font-bold text-ucic-navy text-sm block">Event, Pop-Up & B2B</span>
                                     </div>
-                                    <div class="p-3.5 rounded-2xl bg-blue-50/60 border border-blue-100">
+                                    <div data-build data-build-name="Preview.Spec.02" class="p-3.5 rounded-2xl bg-blue-50/60 border border-blue-100">
                                         <span class="text-slate-500 font-medium block mb-0.5">Status Teknologi</span>
-                                        <span class="font-display font-bold text-ucic-blue text-sm">Zero Coding Needed</span>
+                                        <span data-type data-type-speed="26" class="font-display font-bold text-ucic-blue text-sm block">Zero Coding Needed</span>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Floating Parallax Badge 1 (Top Right - Posisi disesuaikan agar tidak menutupi badge kartu) -->
-                            <div id="parallax-badge-1" class="hidden sm:flex items-center gap-3.5 bg-ucic-navy text-white px-5 py-3.5 rounded-2xl shadow-soft-lg border border-white/10 absolute -top-12 -right-3 z-20">
+                            <!-- Floating Parallax Badge 1 -->
+                            <div id="parallax-badge-1" data-build data-build-name="Badge.Grant" class="hidden sm:flex items-center gap-3.5 bg-ucic-navy text-white px-5 py-3.5 rounded-2xl shadow-soft-lg border border-white/10 absolute -top-12 -right-3 z-20">
                                 <div class="w-10 h-10 rounded-xl bg-ucic-yellow text-ucic-navy flex items-center justify-center font-display font-extrabold text-sm">
                                     Rp
                                 </div>
                                 <div>
                                     <div class="text-[11px] text-blue-200 font-medium">Dukungan Penuh</div>
-                                    <div class="font-display font-bold text-sm">Modal Kerja & Lisensi</div>
+                                    <div data-type data-type-speed="28" class="font-display font-bold text-sm">Modal Kerja & Lisensi</div>
                                 </div>
                             </div>
 
-                            <!-- Floating Parallax Badge 2 (Bottom Left) -->
-                            <div id="parallax-badge-2" class="hidden sm:flex items-center gap-3 bg-white text-ucic-navy px-5 py-3 rounded-full shadow-soft-lg border border-slate-200/80 absolute -bottom-5 -left-5 z-20">
+                            <!-- Floating Parallax Badge 2 -->
+                            <div id="parallax-badge-2" data-build data-build-name="Badge.Open" class="hidden sm:flex items-center gap-3 bg-white text-ucic-navy px-5 py-3 rounded-full shadow-soft-lg border border-slate-200/80 absolute -bottom-5 -left-5 z-20">
                                 <span class="w-3 h-3 rounded-full bg-ucic-blue ring-4 ring-blue-100"></span>
-                                <span class="font-display font-bold text-xs tracking-wide">
+                                <span data-type data-type-speed="26" class="font-display font-bold text-xs tracking-wide">
                                     Terbuka Untuk Seluruh Mahasiswa
                                 </span>
                             </div>
@@ -311,27 +374,29 @@
                 
                 <!-- Section Header -->
                 <div class="max-w-2xl mb-12">
-                    <span class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-100/80 text-ucic-blue text-xs font-display font-bold uppercase tracking-wider mb-3">
-                        Inti Program & Benefit
-                    </span>
-                    <h2 class="font-display font-extrabold text-3xl sm:text-4xl lg:text-5xl tracking-tight text-ucic-navy">
-                        Fokus pada eksekusi pasar. Teknologi dan modal kami yang siapkan.
-                    </h2>
+                    <div data-build data-build-name="Benefit.Badge" class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-100/80 text-ucic-blue text-xs font-display font-bold uppercase tracking-wider mb-3">
+                        <span data-type data-type-speed="28">Inti Program & Benefit</span>
+                    </div>
+                    <div data-build data-build-name="Benefit.Heading">
+                        <h2 data-type data-type-speed="22" class="font-display font-extrabold text-3xl sm:text-4xl lg:text-5xl tracking-tight text-ucic-navy">
+                            Fokus pada eksekusi pasar. Teknologi dan modal kami yang siapkan.
+                        </h2>
+                    </div>
                 </div>
 
                 <!-- 3 Kartu Utama Bento Grid -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
                     
                     <!-- Card 1: Produk Siap Jual -->
-                    <div class="bg-white rounded-3xl border border-slate-200/80 p-8 lg:p-10 flex flex-col justify-between hover:border-ucic-blue/40 hover:-translate-y-1.5 transition-all duration-300 shadow-soft">
+                    <div data-build data-build-name="Benefit.Card.01" class="bg-white rounded-3xl border border-slate-200/80 p-8 lg:p-10 flex flex-col justify-between hover:border-ucic-blue/40 hover:-translate-y-1.5 transition-[transform,border-color,box-shadow] duration-300 shadow-soft">
                         <div>
                             <div class="w-14 h-14 rounded-2xl bg-blue-50 text-ucic-blue flex items-center justify-center mb-6 font-display font-extrabold text-xl border border-blue-100">
                                 01
                             </div>
-                            <h3 class="font-display font-bold text-2xl text-ucic-navy mb-3">
+                            <h3 data-type data-type-speed="30" class="font-display font-bold text-2xl text-ucic-navy mb-3">
                                 Produk Siap Jual
                             </h3>
-                            <p class="text-slate-600 text-base leading-relaxed">
+                            <p data-type data-type-speed="14" class="text-slate-600 text-base leading-relaxed">
                                 Sistem AI Photobooth lengkap siap langsung dipakai untuk operasional bisnis. Mulai dari pemrosesan wajah AI instan, pembayaran/tiket QR, hingga cetak ukuran foto standar event.
                             </p>
                         </div>
@@ -342,17 +407,17 @@
                     </div>
 
                     <!-- Card 2: Suntikan Permodalan -->
-                    <div class="bg-gradient-to-br from-ucic-blue to-ucic-navy text-white rounded-3xl p-8 lg:p-10 flex flex-col justify-between hover:-translate-y-1.5 transition-all duration-300 shadow-glow-blue relative overflow-hidden">
+                    <div data-build data-build-name="Benefit.Card.02" class="bg-gradient-to-br from-ucic-blue to-ucic-navy text-white rounded-3xl p-8 lg:p-10 flex flex-col justify-between hover:-translate-y-1.5 transition-[transform,box-shadow] duration-300 shadow-glow-blue relative overflow-hidden">
                         <div class="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-ucic-yellow/15 blur-2xl pointer-events-none"></div>
                         <div>
                             <div class="w-14 h-14 rounded-2xl bg-ucic-yellow text-ucic-navy flex items-center justify-center mb-6 font-display font-extrabold text-xl shadow-sm">
                                 02
                             </div>
-                            <h3 class="font-display font-bold text-2xl text-white mb-3">
+                            <h3 data-type data-type-speed="30" class="font-display font-bold text-2xl text-white mb-3">
                                 Suntikan Permodalan
                             </h3>
-                            <p class="text-blue-100 text-base leading-relaxed">
-                                Pendanaan awal untuk biaya pemasaran, operasional, produksi booth fisik, dan eksekusi ide komersialisasi agar timmu bisa langsung bergerak menghasilkan *revenue*.
+                            <p data-type data-type-speed="14" class="text-blue-100 text-base leading-relaxed">
+                                Pendanaan awal untuk biaya pemasaran, operasional, produksi booth fisik, dan eksekusi ide komersialisasi agar timmu bisa langsung bergerak menghasilkan revenue.
                             </p>
                         </div>
                         <div class="mt-8 pt-4 border-t border-white/15 flex items-center justify-between text-xs font-display font-bold uppercase tracking-wider text-blue-200">
@@ -362,16 +427,16 @@
                     </div>
 
                     <!-- Card 3: Mentoring Intensif -->
-                    <div class="bg-white rounded-3xl border border-slate-200/80 p-8 lg:p-10 flex flex-col justify-between hover:border-ucic-blue/40 hover:-translate-y-1.5 transition-all duration-300 shadow-soft">
+                    <div data-build data-build-name="Benefit.Card.03" class="bg-white rounded-3xl border border-slate-200/80 p-8 lg:p-10 flex flex-col justify-between hover:border-ucic-blue/40 hover:-translate-y-1.5 transition-[transform,border-color,box-shadow] duration-300 shadow-soft">
                         <div>
                             <div class="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mb-6 font-display font-extrabold text-xl border border-amber-200/60">
                                 03
                             </div>
-                            <h3 class="font-display font-bold text-2xl text-ucic-navy mb-3">
+                            <h3 data-type data-type-speed="30" class="font-display font-bold text-2xl text-ucic-navy mb-3">
                                 Mentoring Intensif
                             </h3>
-                            <p class="text-slate-600 text-base leading-relaxed">
-                                Pendampingan langsung validasi pasar, penyusunan *pricing strategy*, kemitraan B2B/Event, dan manajemen arus kas dari para praktisi industri.
+                            <p data-type data-type-speed="14" class="text-slate-600 text-base leading-relaxed">
+                                Pendampingan langsung validasi pasar, penyusunan pricing strategy, kemitraan B2B/Event, dan manajemen arus kas dari para praktisi industri.
                             </p>
                         </div>
                         <div class="mt-8 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-display font-bold uppercase tracking-wider text-slate-400">
@@ -392,73 +457,77 @@
                 
                 <div class="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
                     <div>
-                        <span class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-100/80 text-amber-800 text-xs font-display font-bold uppercase tracking-wider mb-3">
-                            Alur Seleksi Ringkas
-                        </span>
-                        <h2 class="font-display font-extrabold text-3xl sm:text-4xl lg:text-5xl tracking-tight text-ucic-navy">
-                            Empat tahap menuju eksekusi pasar.
-                        </h2>
+                        <div data-build data-build-name="Seleksi.Badge" class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-100/80 text-amber-800 text-xs font-display font-bold uppercase tracking-wider mb-3">
+                            <span data-type data-type-speed="28">Alur Seleksi Ringkas</span>
+                        </div>
+                        <div data-build data-build-name="Seleksi.Heading">
+                            <h2 data-type data-type-speed="22" class="font-display font-extrabold text-3xl sm:text-4xl lg:text-5xl tracking-tight text-ucic-navy">
+                                Empat tahap menuju eksekusi pasar.
+                            </h2>
+                        </div>
                     </div>
-                    <p class="text-sm sm:text-base text-slate-600 max-w-md">
-                        Proses seleksi dirancang cepat dan transparan. Kami menilai ketajaman peluang pasar dan kesiapan tim mengeksekusi bisnis.
-                    </p>
+                    <div data-build data-build-name="Seleksi.Subtext" class="max-w-md">
+                        <p data-type data-type-speed="15" class="text-sm sm:text-base text-slate-600">
+                            Proses seleksi dirancang cepat dan transparan. Kami menilai ketajaman peluang pasar dan kesiapan tim mengeksekusi bisnis.
+                        </p>
+                    </div>
                 </div>
 
                 <!-- 4 Langkah Grid -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
                     
                     <!-- Step 01 -->
-                    <div class="relative p-7 rounded-3xl bg-ucic-bg border border-slate-200/80 group hover:bg-white hover:border-ucic-blue/40 hover:shadow-soft transition-all duration-300">
+                    <div data-build data-build-name="Step.Card.01" class="relative p-7 rounded-3xl bg-ucic-bg border border-slate-200/80 group hover:bg-white hover:border-ucic-blue/40 hover:shadow-soft transition-[background-color,border-color,box-shadow] duration-300">
                         <div class="flex items-center justify-between mb-6">
                             <span class="w-12 h-12 rounded-2xl bg-ucic-blue text-white flex items-center justify-center font-display font-bold text-lg">01</span>
                             <span class="text-xs font-display font-semibold px-3 py-1 rounded-full bg-blue-50 text-ucic-blue">Tahap Awal</span>
                         </div>
-                        <h3 class="font-display font-bold text-xl text-ucic-navy mb-2">
+                        <h3 data-type data-type-speed="28" class="font-display font-bold text-xl text-ucic-navy mb-2">
                             Upload Proposal PDF
                         </h3>
-                        <p class="text-sm text-slate-600 leading-relaxed">
+                        <p data-type data-type-speed="14" class="text-sm text-slate-600 leading-relaxed">
                             Kirimkan dokumen konsep bisnis, target pasar (event/kampus/kemitraan), dan rencana anggaran melalui form di halaman ini.
                         </p>
                     </div>
 
                     <!-- Step 02 -->
-                    <div class="relative p-7 rounded-3xl bg-ucic-bg border border-slate-200/80 group hover:bg-white hover:border-ucic-blue/40 hover:shadow-soft transition-all duration-300">
+                    <div data-build data-build-name="Step.Card.02" class="relative p-7 rounded-3xl bg-ucic-bg border border-slate-200/80 group hover:bg-white hover:border-ucic-blue/40 hover:shadow-soft transition-[background-color,border-color,box-shadow] duration-300">
                         <div class="flex items-center justify-between mb-6">
                             <span class="w-12 h-12 rounded-2xl bg-blue-100 text-ucic-blue group-hover:bg-ucic-blue group-hover:text-white transition-colors flex items-center justify-center font-display font-bold text-lg">02</span>
                             <span class="text-xs font-display font-semibold px-3 py-1 rounded-full bg-slate-200/70 text-slate-700">Seleksi Berkas</span>
                         </div>
-                        <h3 class="font-display font-bold text-xl text-ucic-navy mb-2">
+                        <h3 data-type data-type-speed="28" class="font-display font-bold text-xl text-ucic-navy mb-2">
                             Kurasi Ide Bisnis
                         </h3>
-                        <p class="text-sm text-slate-600 leading-relaxed">
+                        <p data-type data-type-speed="14" class="text-sm text-slate-600 leading-relaxed">
                             Tim penilai mengevaluasi kelayakan model komersialisasi, potensi profitabilitas, dan keunikan strategi penetrasi pasar.
                         </p>
                     </div>
 
                     <!-- Step 03 -->
-                    <div class="relative p-7 rounded-3xl bg-ucic-bg border border-slate-200/80 group hover:bg-white hover:border-ucic-blue/40 hover:shadow-soft transition-all duration-300">
+                    <div data-build data-build-name="Step.Card.03" class="relative p-7 rounded-3xl bg-ucic-bg border border-slate-200/80 group hover:bg-white hover:border-ucic-blue/40 hover:shadow-soft transition-[background-color,border-color,box-shadow] duration-300">
                         <div class="flex items-center justify-between mb-6">
                             <span class="w-12 h-12 rounded-2xl bg-blue-100 text-ucic-blue group-hover:bg-ucic-blue group-hover:text-white transition-colors flex items-center justify-center font-display font-bold text-lg">03</span>
                             <span class="text-xs font-display font-semibold px-3 py-1 rounded-full bg-slate-200/70 text-slate-700">Presentasi</span>
                         </div>
-                        <h3 class="font-display font-bold text-xl text-ucic-navy mb-2">
+                        <h3 data-type data-type-speed="28" class="font-display font-bold text-xl text-ucic-navy mb-2">
                             Pitching Singkat
                         </h3>
-                        <p class="text-sm text-slate-600 leading-relaxed">
+                        <p data-type data-type-speed="14" class="text-sm text-slate-600 leading-relaxed">
                             Tim terpilih mempresentasikan strategi eksekusi secara langsung di hadapan Board of Mentors selama 15 menit.
                         </p>
                     </div>
 
                     <!-- Step 04 -->
-                    <div class="relative p-7 rounded-3xl bg-ucic-bg border border-slate-200/80 group hover:bg-white hover:border-amber-400 hover:shadow-soft transition-all duration-300">
+                    <div data-build data-build-name="Step.Card.04" class="relative p-7 rounded-3xl bg-ucic-bg border border-slate-200/80 group hover:bg-white hover:border-amber-400 hover:shadow-soft transition-[background-color,border-color,box-shadow] duration-300">
                         <div class="flex items-center justify-between mb-6">
                             <span class="w-12 h-12 rounded-2xl bg-ucic-yellow text-ucic-navy flex items-center justify-center font-display font-bold text-lg">04</span>
                             <span class="text-xs font-display font-bold px-3 py-1 rounded-full bg-amber-100 text-amber-800">Go-To-Market</span>
                         </div>
-                        <h3 class="font-display font-bold text-xl text-ucic-navy mb-2">
+                        <h3 data-type data-type-speed="28" class="font-display font-bold text-xl text-ucic-navy mb-2">
                             Pencairan Modal & Eksekusi
                         </h3>
-                        <p class="text-sm text-slate-600 leading-relaxed">
+                        <p data-type data-type-speed="14" class="text-sm text-slate-600 leading-relaxed">
                             Penyerahan dana modal usaha, serah terima akses penuh sistem AI Photobooth, dan dimulainya pendampingan bisnis.
                         </p>
                     </div>
@@ -469,7 +538,7 @@
 
         <!-- ==========================================
              5. JAJARAN MENTOR / BOARD OF MENTORS (#mentor)
-             (Ukuran Card & Rasio Foto 100% Seragam)
+             (Animasi kemunculan diperhalus dengan quartic curve & gentle rise)
         =========================================== -->
         <section id="mentor" class="py-20 lg:py-24">
             <div class="w-full max-w-[1600px] mx-auto px-6 sm:px-10 lg:px-16 xl:px-24">
@@ -477,120 +546,120 @@
                 <!-- Header Mentor -->
                 <div class="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
                     <div>
-                        <span class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-100/80 text-ucic-blue text-xs font-display font-bold uppercase tracking-wider mb-3">
-                            Board of Mentors
-                        </span>
-                        <h2 class="font-display font-extrabold text-3xl sm:text-4xl lg:text-5xl tracking-tight text-ucic-navy">
-                            Didampingi langsung oleh praktisi bisnis & teknologi.
-                        </h2>
+                        <div data-build data-build-name="Mentor.Badge" class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-100/80 text-ucic-blue text-xs font-display font-bold uppercase tracking-wider mb-3">
+                            <span data-type data-type-speed="28">Board of Mentors</span>
+                        </div>
+                        <div data-build data-build-name="Mentor.Heading">
+                            <h2 data-type data-type-speed="22" class="font-display font-extrabold text-3xl sm:text-4xl lg:text-5xl tracking-tight text-ucic-navy">
+                                Didampingi langsung oleh praktisi bisnis & teknologi.
+                            </h2>
+                        </div>
                     </div>
-                    <p class="text-sm sm:text-base text-slate-600 max-w-md">
-                        Bukan sekadar teori kelas. Kamu akan dibimbing menyusun strategi harga, akuisisi klien B2B, hingga manajemen operasional booth.
-                    </p>
+                    <div data-build data-build-name="Mentor.Subtext" class="max-w-md">
+                        <p data-type data-type-speed="15" class="text-sm sm:text-base text-slate-600">
+                            Bukan sekadar teori kelas. Kamu akan dibimbing menyusun strategi harga, akuisisi klien B2B, hingga manajemen operasional booth.
+                        </p>
+                    </div>
                 </div>
 
-                <!-- Grid 4 Kolom Responsif (items-stretch menjaga tinggi ke-4 card sama persis) -->
+                <!-- Grid 4 Kolom Responsif (Ukuran Card & Foto Seragam) -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 items-stretch">
                     
                     <!-- MENTOR 1 (mentor-1.webp) -->
-                    <article class="group bg-white rounded-3xl border border-slate-200/80 overflow-hidden hover:-translate-y-2 transition-all duration-300 shadow-soft h-full flex flex-col">
+                    <article data-build data-build-smooth="mentor" data-build-name="Mentor.Card.01" class="group bg-white rounded-3xl border border-slate-200/80 overflow-hidden hover:-translate-y-2 transition-[transform,box-shadow,border-color] duration-300 shadow-soft h-full flex flex-col">
                         <div class="relative w-full aspect-[4/5] shrink-0 overflow-hidden bg-slate-100">
                             <img src="assets/mentors/mentor-1.webp" 
                                  alt="Mentor 1 - Business & Strategy" 
                                  class="w-full h-full object-cover object-top grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500">
-                            <!-- Floating Badge Kategori Keahlian -->
                             <span class="absolute top-4 left-4 px-3.5 py-1.5 rounded-full text-xs font-display font-bold bg-white/95 text-ucic-blue shadow-sm">
                                 Business & Strategy
                             </span>
                         </div>
                         <div class="p-6 flex-1 flex flex-col justify-between">
                             <div>
-                                <h3 class="font-display font-bold text-xl text-ucic-navy group-hover:text-ucic-blue transition-colors">
+                                <h3 data-type data-type-speed="30" class="font-display font-bold text-xl text-ucic-navy group-hover:text-ucic-blue transition-colors">
                                     Assoc. Prof. Dr. Chandra Lukita, M.M., M.TI.
                                 </h3>
-                                <p class="text-xs font-semibold text-amber-600 uppercase tracking-wider mt-1">
+                                <p data-type data-type-speed="22" class="text-xs font-semibold text-amber-600 uppercase tracking-wider mt-1">
                                     Managing Partner, NusaVentures
                                 </p>
                             </div>
-                            <p class="text-xs sm:text-sm text-slate-600 mt-4 pt-3 border-t border-slate-100">
+                            <p data-type data-type-speed="15" class="text-xs sm:text-sm text-slate-600 mt-4 pt-3 border-t border-slate-100">
                                 Fokus: Model bisnis B2B, negosiasi kemitraan event, & ekspansi pasar.
                             </p>
                         </div>
                     </article>
 
                     <!-- MENTOR 2 (mentor-2.JPG) -->
-                    <article class="group bg-white rounded-3xl border border-slate-200/80 overflow-hidden hover:-translate-y-2 transition-all duration-300 shadow-soft h-full flex flex-col">
+                    <article data-build data-build-smooth="mentor" data-build-name="Mentor.Card.02" class="group bg-white rounded-3xl border border-slate-200/80 overflow-hidden hover:-translate-y-2 transition-[transform,box-shadow,border-color] duration-300 shadow-soft h-full flex flex-col">
                         <div class="relative w-full aspect-[4/5] shrink-0 overflow-hidden bg-slate-100">
                             <img src="assets/mentors/mentor-2.JPG" 
                                  alt="Mentor 2 - Product & AI Tech" 
                                  class="w-full h-full object-cover object-top grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500">
-                            <!-- Floating Badge Kategori Keahlian -->
                             <span class="absolute top-4 left-4 px-3.5 py-1.5 rounded-full text-xs font-display font-bold bg-white/95 text-ucic-blue shadow-sm">
                                 Product & AI Tech
                             </span>
                         </div>
                         <div class="p-6 flex-1 flex flex-col justify-between">
                             <div>
-                                <h3 class="font-display font-bold text-xl text-ucic-navy group-hover:text-ucic-blue transition-colors">
+                                <h3 data-type data-type-speed="30" class="font-display font-bold text-xl text-ucic-navy group-hover:text-ucic-blue transition-colors">
                                     Lorenz Adam Damara
                                 </h3>
-                                <p class="text-xs font-semibold text-amber-600 uppercase tracking-wider mt-1">
+                                <p data-type data-type-speed="22" class="text-xs font-semibold text-amber-600 uppercase tracking-wider mt-1">
                                     Lead AI Architect & Product Director
                                 </p>
                             </div>
-                            <p class="text-xs sm:text-sm text-slate-600 mt-4 pt-3 border-t border-slate-100">
+                            <p data-type data-type-speed="15" class="text-xs sm:text-sm text-slate-600 mt-4 pt-3 border-t border-slate-100">
                                 Fokus: Kustomisasi template AI Photobooth, kehandalan sistem, & UX pengguna.
                             </p>
                         </div>
                     </article>
 
                     <!-- MENTOR 3 (mentor-3.jpeg) -->
-                    <article class="group bg-white rounded-3xl border border-slate-200/80 overflow-hidden hover:-translate-y-2 transition-all duration-300 shadow-soft h-full flex flex-col">
+                    <article data-build data-build-smooth="mentor" data-build-name="Mentor.Card.03" class="group bg-white rounded-3xl border border-slate-200/80 overflow-hidden hover:-translate-y-2 transition-[transform,box-shadow,border-color] duration-300 shadow-soft h-full flex flex-col">
                         <div class="relative w-full aspect-[4/5] shrink-0 overflow-hidden bg-slate-100">
                             <img src="assets/mentors/mentor-3.jpeg" 
                                  alt="Mentor 3 - Growth & Marketing" 
                                  class="w-full h-full object-cover object-top grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500">
-                            <!-- Floating Badge Kategori Keahlian -->
                             <span class="absolute top-4 left-4 px-3.5 py-1.5 rounded-full text-xs font-display font-bold bg-white/95 text-ucic-blue shadow-sm">
                                 Growth & Marketing
                             </span>
                         </div>
                         <div class="p-6 flex-1 flex flex-col justify-between">
                             <div>
-                                <h3 class="font-display font-bold text-xl text-ucic-navy group-hover:text-ucic-blue transition-colors">
+                                <h3 data-type data-type-speed="30" class="font-display font-bold text-xl text-ucic-navy group-hover:text-ucic-blue transition-colors">
                                     Gentha Adi Suryadi
                                 </h3>
-                                <p class="text-xs font-semibold text-amber-600 uppercase tracking-wider mt-1">
+                                <p data-type data-type-speed="22" class="text-xs font-semibold text-amber-600 uppercase tracking-wider mt-1">
                                     Head of Brand Activation, Creatix
                                 </p>
                             </div>
-                            <p class="text-xs sm:text-sm text-slate-600 mt-4 pt-3 border-t border-slate-100">
+                            <p data-type data-type-speed="15" class="text-xs sm:text-sm text-slate-600 mt-4 pt-3 border-t border-slate-100">
                                 Fokus: Strategi viral kampanye UGC, akuisisi sponsor brand, & pop-up traffic.
                             </p>
                         </div>
                     </article>
 
                     <!-- MENTOR 4 (mentor-4.jpeg) -->
-                    <article class="group bg-white rounded-3xl border border-slate-200/80 overflow-hidden hover:-translate-y-2 transition-all duration-300 shadow-soft h-full flex flex-col">
+                    <article data-build data-build-smooth="mentor" data-build-name="Mentor.Card.04" class="group bg-white rounded-3xl border border-slate-200/80 overflow-hidden hover:-translate-y-2 transition-[transform,box-shadow,border-color] duration-300 shadow-soft h-full flex flex-col">
                         <div class="relative w-full aspect-[4/5] shrink-0 overflow-hidden bg-slate-100">
                             <img src="assets/mentors/mentor-4.jpeg" 
                                  alt="Mentor 4 - Venture & Finance" 
                                  class="w-full h-full object-cover object-top grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500">
-                            <!-- Floating Badge Kategori Keahlian -->
                             <span class="absolute top-4 left-4 px-3.5 py-1.5 rounded-full text-xs font-display font-bold bg-white/95 text-ucic-blue shadow-sm">
                                 Venture & Finance
                             </span>
                         </div>
                         <div class="p-6 flex-1 flex flex-col justify-between">
                             <div>
-                                <h3 class="font-display font-bold text-xl text-ucic-navy group-hover:text-ucic-blue transition-colors">
-                                    Kefas Zefanya Agusya
+                                <h3 data-type data-type-speed="30" class="font-display font-bold text-xl text-ucic-navy group-hover:text-ucic-blue transition-colors">
+                                    Kefan Zefanya Agusya
                                 </h3>
-                                <p class="text-xs font-semibold text-amber-600 uppercase tracking-wider mt-1">
+                                <p data-type data-type-speed="22" class="text-xs font-semibold text-amber-600 uppercase tracking-wider mt-1">
                                     Investment Principal, SeedBridge
                                 </p>
                             </div>
-                            <p class="text-xs sm:text-sm text-slate-600 mt-4 pt-3 border-t border-slate-100">
+                            <p data-type data-type-speed="15" class="text-xs sm:text-sm text-slate-600 mt-4 pt-3 border-t border-slate-100">
                                 Fokus: Manajemen modal kerja, unit economics booth, & proyeksi ROI.
                             </p>
                         </div>
@@ -607,7 +676,7 @@
             <div class="w-full max-w-5xl mx-auto px-6 sm:px-10">
                 
                 <!-- Form Card Wrapper -->
-                <div class="bg-white rounded-[2rem] border border-slate-200/90 p-6 sm:p-10 lg:p-14 shadow-soft-lg relative overflow-hidden">
+                <div data-build data-build-name="Portal.RegistrationForm" class="bg-white rounded-[2rem] border border-slate-200/90 p-6 sm:p-10 lg:p-14 shadow-soft-lg relative overflow-hidden">
                     
                     <!-- Dekorasi Sudut Kartu Form -->
                     <div class="w-64 h-64 rounded-full bg-ucic-yellow/15 blur-3xl absolute -top-20 -right-20 pointer-events-none"></div>
@@ -615,13 +684,13 @@
 
                     <!-- Form Header -->
                     <div class="border-b border-slate-100 pb-6 mb-8 relative z-10">
-                        <span class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-50 text-ucic-blue font-display font-bold text-xs uppercase tracking-wider mb-3">
+                        <span data-type data-type-speed="28" class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-50 text-ucic-blue font-display font-bold text-xs uppercase tracking-wider mb-3">
                             Portal Pengajuan Proposal
                         </span>
-                        <h2 class="font-display font-extrabold text-3xl sm:text-4xl text-ucic-navy tracking-tight">
+                        <h2 data-type data-type-speed="24" class="font-display font-extrabold text-3xl sm:text-4xl text-ucic-navy tracking-tight">
                             Daftar Permodalan Bisnis AI Photobooth
                         </h2>
-                        <p class="text-slate-600 text-sm sm:text-base mt-2">
+                        <p data-type data-type-speed="14" class="text-slate-600 text-sm sm:text-base mt-2">
                             Lengkapi identitas tim dan upload dokumen proposal pengajuanmu dalam format PDF. Pastikan seluruh data telah sesuai sebelum dikirim.
                         </p>
                     </div>
@@ -634,7 +703,7 @@
                         
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <!-- Field 1: Nama perusahaan/merk -->
-                            <div>
+                            <div data-build data-build-name="Input.Perusahaan">
                                 <label for="nama_perusahaan" class="block font-display font-semibold text-sm text-ucic-navy mb-2">
                                     Nama perusahaan/merk <span class="text-amber-500">*</span>
                                 </label>
@@ -644,7 +713,7 @@
                             </div>
 
                             <!-- Field 2: Nama direktur -->
-                            <div>
+                            <div data-build data-build-name="Input.Direktur">
                                 <label for="nama_direktur" class="block font-display font-semibold text-sm text-ucic-navy mb-2">
                                     Nama direktur <span class="text-amber-500">*</span>
                                 </label>
@@ -655,7 +724,7 @@
                         </div>
 
                         <!-- Field 3: Nama anggota -->
-                        <div>
+                        <div data-build data-build-name="Input.Anggota">
                             <label for="nama_anggota" class="block font-display font-semibold text-sm text-ucic-navy mb-2">
                                 Nama anggota <span class="text-amber-500">*</span>
                             </label>
@@ -672,7 +741,7 @@
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <!-- Field 4: Program studi -->
-                            <div>
+                            <div data-build data-build-name="Input.Prodi">
                                 <label for="program_studi" class="block font-display font-semibold text-sm text-ucic-navy mb-2">
                                     Program studi <span class="text-amber-500">*</span>
                                 </label>
@@ -682,7 +751,7 @@
                             </div>
 
                             <!-- Field 5: Semester -->
-                            <div>
+                            <div data-build data-build-name="Input.Semester">
                                 <label for="semester" class="block font-display font-semibold text-sm text-ucic-navy mb-2">
                                     Semester <span class="text-amber-500">*</span>
                                 </label>
@@ -702,17 +771,15 @@
                         </div>
 
                         <!-- Field 6: Upload Proposal pengajuan (pdf) -->
-                        <div>
+                        <div data-build data-build-name="Input.UploadPDF">
                             <label class="block font-display font-semibold text-sm text-ucic-navy mb-2">
                                 Upload Proposal pengajuan (pdf) <span class="text-amber-500">*</span>
                             </label>
                             
-                            <!-- Modern Drag & Drop Area -->
                             <div id="dropzone" class="relative border-2 border-dashed border-slate-300 rounded-3xl bg-slate-50/70 p-7 sm:p-9 text-center cursor-pointer hover:border-ucic-blue hover:bg-blue-50/40 transition-all">
                                 <input type="file" id="proposal_pdf" name="proposal_pdf" accept=".pdf,application/pdf" required
                                        class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
                                 
-                                <!-- Default Prompt View -->
                                 <div id="dropzone-default" class="space-y-2.5">
                                     <div class="w-14 h-14 rounded-2xl bg-white border border-slate-200/80 mx-auto flex items-center justify-center text-ucic-blue shadow-sm">
                                         <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -727,7 +794,6 @@
                                     </p>
                                 </div>
 
-                                <!-- Selected File Preview View -->
                                 <div id="dropzone-preview" class="hidden items-center justify-between bg-white p-4 rounded-2xl border border-blue-200 text-left relative z-20 shadow-sm">
                                     <div class="flex items-center gap-3.5 overflow-hidden">
                                         <div class="w-11 h-11 rounded-xl bg-blue-50 text-ucic-blue flex items-center justify-center font-display font-extrabold text-xs shrink-0">
@@ -746,16 +812,15 @@
                         </div>
 
                         <!-- Submit Button -->
-                        <div class="pt-3">
+                        <div data-build data-build-name="Form.SubmitBtn" class="pt-3">
                             <button type="submit" id="submit-btn"
-                                    class="w-full inline-flex items-center justify-center gap-3 bg-ucic-blue text-white font-display font-bold text-base sm:text-lg px-8 py-4 rounded-2xl shadow-glow-blue hover:bg-ucic-blueLight hover:-translate-y-0.5 disabled:opacity-60 disabled:pointer-events-none transition-all duration-300">
+                                    class="w-full inline-flex items-center justify-center gap-3 bg-ucic-blue text-white font-display font-bold text-base sm:text-lg px-8 py-4 rounded-2xl shadow-glow-blue hover:bg-ucic-blueLight hover:-translate-y-0.5 disabled:opacity-60 disabled:pointer-events-none transition-[transform,background-color,box-shadow] duration-300">
                                 <span id="submit-btn-text">Kirim Proposal Permodalan</span>
                                 <span id="submit-btn-icon" class="w-7 h-7 rounded-full bg-ucic-yellow text-ucic-navy flex items-center justify-center">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
                                     </svg>
                                 </span>
-                                <!-- Loading Spinner -->
                                 <svg id="submit-spinner" class="hidden w-5 h-5 animate-spin text-ucic-yellow" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -775,11 +840,11 @@
     =========================================== -->
     <footer class="bg-white border-t border-slate-200/80 py-10">
         <div class="w-full max-w-[1600px] mx-auto px-6 sm:px-10 lg:px-16 xl:px-24 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs sm:text-sm text-slate-500">
-            <div class="flex items-center gap-3">
+            <div data-build data-build-name="Footer.Brand" class="flex items-center gap-3">
                 <span class="font-display font-extrabold text-ucic-blue">UCIC AI CENTER</span>
                 <span>— Program Permodalan & Komersialisasi AI Photobooth</span>
             </div>
-            <div>
+            <div data-build data-build-name="Footer.Copyright">
                 &copy; 2026 UCIC AI Center. Seluruh Hak Cipta Dilindungi.
             </div>
         </div>
@@ -810,13 +875,82 @@
     </div>
 
     <!-- ==========================================
-         JAVASCRIPT: SWARM CURSORS, LOOPING TYPEWRITER, GSAP & AJAX
+         JAVASCRIPT:
+         1. MULTI-AGENT SWARM CURSORS + DIAGONAL TOP-LEFT TO BOTTOM-RIGHT DRAG BUILD
+         2. EXTRA-SMOOTH QUARTIC EASING & WAVE STAGGER UNTUK KARTU MENTOR
+         3. LIVE TYPEWRITER PADA SELURUH TEKS & HEADING
+         4. GSAP PARALLAX & AJAX FORM SUBMISSION
     =========================================== -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
 
             /* -----------------------------------------------------------
-             * 1. SWARM CURSORS EFFECT (Tema Biru & Kuning UCIC AI Center)
+             * 1. PERSIAPAN SHELL TYPEWRITER ANTI-GESER UNTUK SELURUH TEKS
+             * ----------------------------------------------------------- */
+            const typeTargets = Array.from(document.querySelectorAll('[data-type]'));
+            typeTargets.forEach((el) => {
+                const rawText = el.textContent.replace(/\s+/g, ' ').trim();
+                const isInline = window.getComputedStyle(el).display === 'inline';
+                el.dataset.originalText = rawText;
+
+                el.innerHTML = '';
+                const shell = document.createElement('span');
+                shell.className = isInline ? 'type-shell-inline' : 'type-shell';
+
+                const ghost = document.createElement('span');
+                ghost.className = 'type-ghost';
+                ghost.setAttribute('aria-hidden', 'true');
+                ghost.textContent = rawText;
+
+                const live = document.createElement('span');
+                live.className = 'type-live';
+
+                shell.appendChild(ghost);
+                shell.appendChild(live);
+                el.appendChild(shell);
+            });
+
+            function resetTypeElement(el) {
+                if (el._typeTimer) {
+                    clearTimeout(el._typeTimer);
+                    el._typeTimer = null;
+                }
+                const live = el.querySelector('.type-live');
+                if (live) live.textContent = '';
+            }
+
+            function startTypeElement(el, delayMs = 0) {
+                resetTypeElement(el);
+                const fullText = el.dataset.originalText || '';
+                const live = el.querySelector('.type-live');
+                if (!live || !fullText) return;
+
+                const baseSpeed = parseInt(el.getAttribute('data-type-speed') || '20', 10);
+                let idx = 0;
+
+                const cursorSpan = document.createElement('span');
+                cursorSpan.className = 'typewriter-cursor';
+                cursorSpan.textContent = '|';
+
+                el._typeTimer = setTimeout(() => {
+                    function step() {
+                        if (idx <= fullText.length) {
+                            live.textContent = fullText.slice(0, idx);
+                            if (idx < fullText.length) {
+                                live.appendChild(cursorSpan);
+                            }
+                            idx++;
+                            const jitter = Math.random() * 8;
+                            el._typeTimer = setTimeout(step, baseSpeed + jitter);
+                        }
+                    }
+                    step();
+                }, delayMs);
+            }
+
+
+            /* -----------------------------------------------------------
+             * 2. UNIFIED 60FPS CANVAS: SWARM CURSORS + DIAGONAL BOX DRAGGER
              * ----------------------------------------------------------- */
             const canvas = document.getElementById('swarm-canvas');
             const ctx = canvas.getContext('2d');
@@ -828,6 +962,7 @@
                 height = canvas.height = window.innerHeight;
             });
 
+            let swarmMode = 'orbit'; // 'orbit' -> 'interactive'
             const mouse = {
                 x: width / 2,
                 y: height / 2,
@@ -840,27 +975,116 @@
                 mouse.active = true;
             });
 
+            function drawFigmaCursor(ctx, x, y, angle, color, labelText = null) {
+                ctx.save();
+                ctx.translate(x, y);
+
+                if (labelText) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.lineTo(14, 7.5);
+                    ctx.lineTo(8.5, 9.8);
+                    ctx.lineTo(6.2, 15.5);
+                    ctx.closePath();
+                    ctx.fillStyle = color;
+                    ctx.fill();
+                    ctx.lineWidth = 1.4;
+                    ctx.strokeStyle = '#FFFFFF';
+                    ctx.stroke();
+
+                    ctx.font = '600 10px "Outfit", sans-serif';
+                    const textMetrics = ctx.measureText(labelText);
+                    const padX = 7;
+                    const boxW = textMetrics.width + padX * 2;
+                    const boxH = 18;
+                    const tagX = 11;
+                    const tagY = 12;
+
+                    ctx.fillStyle = '#0B2545';
+                    ctx.beginPath();
+                    if (typeof ctx.roundRect === 'function') {
+                        ctx.roundRect(tagX, tagY, boxW, boxH, 5);
+                    } else {
+                        ctx.rect(tagX, tagY, boxW, boxH);
+                    }
+                    ctx.fill();
+
+                    ctx.fillStyle = '#FBBF24';
+                    ctx.fillRect(tagX, tagY + 3, 2.5, boxH - 6);
+
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.fillText(labelText, tagX + padX + 1, tagY + 12.5);
+                } else {
+                    ctx.rotate(angle);
+                    ctx.beginPath();
+                    ctx.moveTo(4.5, 0);
+                    ctx.lineTo(-3.2, 2.4);
+                    ctx.lineTo(-1.6, 0);
+                    ctx.lineTo(-3.2, -2.4);
+                    ctx.closePath();
+                    ctx.fillStyle = color;
+                    ctx.fill();
+                }
+
+                ctx.restore();
+            }
+
             const BOID_COUNT = 38;
             const boids = [];
 
             class Boid {
-                constructor() {
-                    this.x = Math.random() * width;
-                    this.y = Math.random() * height;
-                    this.vx = (Math.random() - 0.5) * 2.5;
-                    this.vy = (Math.random() - 0.5) * 2.5;
-                    this.size = Math.random() * 2 + 1.6;
-                    this.isYellow = Math.random() < 0.38;
+                constructor(index) {
+                    const angle = (index / BOID_COUNT) * Math.PI * 2;
+                    const radius = 66 + (index % 3) * 15;
+                    this.orbitAngle = angle;
+                    this.orbitRadius = radius;
+                    this.orbitSpeed = 0.042 + (index % 4) * 0.007;
+
+                    this.x = width / 2 + Math.cos(angle) * radius;
+                    this.y = height / 2 + Math.sin(angle) * radius;
+                    this.vx = -Math.sin(angle) * 2;
+                    this.vy = Math.cos(angle) * 2;
+                    this.isYellow = index % 3 === 0;
                     this.damping = 0.89 + Math.random() * 0.04;
+                    this.assignedTask = null;
+                }
+
+                scatterFromCenter() {
+                    const cx = width / 2;
+                    const cy = height / 2;
+                    const angle = Math.atan2(this.y - cy, this.x - cx) + (Math.random() - 0.5) * 0.4;
+                    const burstSpeed = 8 + Math.random() * 6;
+                    this.vx = Math.cos(angle) * burstSpeed;
+                    this.vy = Math.sin(angle) * burstSpeed;
                 }
 
                 update(boidsArray) {
+                    if (this.assignedTask) {
+                        const t = this.assignedTask;
+                        this.x += (t.cursorTargetX - this.x) * 0.26;
+                        this.y += (t.cursorTargetY - this.y) * 0.26;
+                        return;
+                    }
+
+                    if (swarmMode === 'orbit') {
+                        const cx = width / 2;
+                        const cy = height / 2;
+                        this.orbitAngle += this.orbitSpeed;
+                        const targetX = cx + Math.cos(this.orbitAngle) * this.orbitRadius;
+                        const targetY = cy + Math.sin(this.orbitAngle) * this.orbitRadius;
+                        this.vx = (targetX - this.x) * 0.22;
+                        this.vy = (targetY - this.y) * 0.22;
+                        this.x += this.vx;
+                        this.y += this.vy;
+                        return;
+                    }
+
                     const dx = mouse.x - this.x;
                     const dy = mouse.y - this.y;
                     const distToMouse = Math.hypot(dx, dy);
 
-                    if (distToMouse > 4) {
-                        const pull = Math.min(distToMouse * 0.0016, 0.42);
+                    if (distToMouse > 6) {
+                        const pull = Math.min(distToMouse * 0.0014, 0.36);
                         this.vx += (dx / distToMouse) * pull;
                         this.vy += (dy / distToMouse) * pull;
                     }
@@ -868,17 +1092,17 @@
                     let avgX = 0, avgY = 0, neighbors = 0;
                     for (let i = 0; i < boidsArray.length; i++) {
                         const other = boidsArray[i];
-                        if (other === this) continue;
+                        if (other === this || other.assignedTask) continue;
                         const bdx = other.x - this.x;
                         const bdy = other.y - this.y;
                         const dist = Math.hypot(bdx, bdy);
 
-                        if (dist < 75 && dist > 0) {
+                        if (dist < 78 && dist > 0) {
                             avgX += other.x;
                             avgY += other.y;
                             neighbors++;
 
-                            if (dist < 26) {
+                            if (dist < 28) {
                                 this.vx -= (bdx / dist) * 0.13;
                                 this.vy -= (bdy / dist) * 0.13;
                             }
@@ -888,15 +1112,15 @@
                     if (neighbors > 0) {
                         avgX /= neighbors;
                         avgY /= neighbors;
-                        this.vx += (avgX - this.x) * 0.0028;
-                        this.vy += (avgY - this.y) * 0.0028;
+                        this.vx += (avgX - this.x) * 0.0025;
+                        this.vy += (avgY - this.y) * 0.0025;
                     }
 
                     this.vx *= this.damping;
                     this.vy *= this.damping;
 
                     const speed = Math.hypot(this.vx, this.vy);
-                    const maxSpeed = 7.0;
+                    const maxSpeed = 6.2;
                     if (speed > maxSpeed) {
                         this.vx = (this.vx / speed) * maxSpeed;
                         this.vy = (this.vy / speed) * maxSpeed;
@@ -907,127 +1131,431 @@
                 }
 
                 draw() {
+                    if (this.assignedTask) {
+                        const color = this.isYellow ? '#D97706' : '#165297';
+                        drawFigmaCursor(ctx, this.x, this.y, 0, color, this.assignedTask.label);
+                        return;
+                    }
+
                     const angle = Math.atan2(this.vy, this.vx);
-                    ctx.save();
-                    ctx.translate(this.x, this.y);
-                    ctx.rotate(angle);
-
-                    ctx.beginPath();
-                    ctx.moveTo(this.size * 2.2, 0);
-                    ctx.lineTo(-this.size * 1.4, this.size * 1.1);
-                    ctx.lineTo(-this.size * 0.7, 0);
-                    ctx.lineTo(-this.size * 1.4, -this.size * 1.1);
-                    ctx.closePath();
-
-                    ctx.fillStyle = this.isYellow ? 'rgba(245, 158, 11, 0.75)' : 'rgba(22, 82, 151, 0.50)';
-                    ctx.fill();
-                    ctx.restore();
+                    const color = this.isYellow ? 'rgba(245, 158, 11, 0.78)' : 'rgba(22, 82, 151, 0.52)';
+                    drawFigmaCursor(ctx, this.x, this.y, angle, color, null);
                 }
             }
 
             for (let i = 0; i < BOID_COUNT; i++) {
-                boids.push(new Boid());
+                boids.push(new Boid(i));
             }
 
-            function animateSwarm() {
+
+            /* -----------------------------------------------------------
+             * 3. DIAGONAL TOP-LEFT TO BOTTOM-RIGHT DRAG BUILD ENGINE
+             * Dengan kurva quartic ekstra halus & gentle float-up pada Mentor
+             * ----------------------------------------------------------- */
+            const buildItems = Array.from(document.querySelectorAll('[data-build]'));
+            const activeDragTasks = [];
+            const pendingQueue = [];
+            let engineReady = false;
+            let lastScrollY = window.scrollY;
+            let scrollDir = 'down';
+
+            function easeOutCubic(t) {
+                return 1 - Math.pow(1 - t, 3);
+            }
+
+            function easeOutQuart(t) {
+                return 1 - Math.pow(1 - t, 4);
+            }
+
+            function resetElementToUnbuilt(el) {
+                const isSmoothMentor = el.dataset.buildSmooth === 'mentor';
+                el.dataset.buildStatus = 'unbuilt';
+                el.style.opacity = '0';
+                el.style.clipPath = 'inset(0 100% 100% 0)';
+                el.style.transform = isSmoothMentor ? 'translateY(18px) scale(0.985)' : '';
+
+                const activeIdx = activeDragTasks.findIndex(t => t.el === el);
+                if (activeIdx !== -1) {
+                    const task = activeDragTasks[activeIdx];
+                    if (task.boid) task.boid.assignedTask = null;
+                    activeDragTasks.splice(activeIdx, 1);
+                }
+
+                const qIdx = pendingQueue.indexOf(el);
+                if (qIdx !== -1) pendingQueue.splice(qIdx, 1);
+
+                const innerTypes = el.querySelectorAll('[data-type]');
+                innerTypes.forEach(resetTypeElement);
+            }
+
+            buildItems.forEach((el) => {
+                resetElementToUnbuilt(el);
+            });
+
+            function acquireClosestFreeBoid(targetX, targetY) {
+                let bestBoid = null;
+                let bestDist = Infinity;
+                for (let i = 0; i < boids.length; i++) {
+                    if (boids[i].assignedTask) continue;
+                    const d = Math.hypot(boids[i].x - targetX, boids[i].y - targetY);
+                    if (d < bestDist) {
+                        bestDist = d;
+                        bestBoid = boids[i];
+                    }
+                }
+                return bestBoid;
+            }
+
+            function startDiagonalBoxBuild(el) {
+                const rect = el.getBoundingClientRect();
+                if (rect.width === 0 || rect.height === 0) {
+                    el.dataset.buildStatus = 'unbuilt';
+                    return;
+                }
+
+                if (rect.bottom < -120 || rect.top > window.innerHeight + 120) {
+                    resetElementToUnbuilt(el);
+                    return;
+                }
+
+                const isSmoothMentor = el.dataset.buildSmooth === 'mentor';
+                el.dataset.buildStatus = 'building';
+                el.style.opacity = '1';
+
+                const name = el.getAttribute('data-build-name') || 'Frame';
+                const boid = acquireClosestFreeBoid(rect.left, rect.top);
+
+                const task = {
+                    el: el,
+                    name: name,
+                    isSmoothMentor: isSmoothMentor,
+                    label: `${name}  ${Math.round(rect.width)}×${Math.round(rect.height)}`,
+                    startTime: performance.now(),
+                    flyDuration: isSmoothMentor ? 260 : 300,
+                    dragDuration: isSmoothMentor ? 1150 : 950,
+                    holdDuration: isSmoothMentor ? 550 : 480,
+                    cursorTargetX: rect.left,
+                    cursorTargetY: rect.top,
+                    boid: boid,
+                    textTriggered: false
+                };
+
+                if (boid) {
+                    boid.assignedTask = task;
+                }
+
+                activeDragTasks.push(task);
+            }
+
+            let queueTimer = null;
+            function pumpBuildQueue() {
+                if (!engineReady) return;
+
+                while (pendingQueue.length > 0) {
+                    const nextEl = pendingQueue[0];
+                    const rect = nextEl.getBoundingClientRect();
+                    const outOfView = rect.bottom < -120 || rect.top > window.innerHeight + 120;
+
+                    if (nextEl.dataset.buildStatus !== 'queued' || outOfView) {
+                        pendingQueue.shift();
+                        if (outOfView) resetElementToUnbuilt(nextEl);
+                    } else {
+                        break;
+                    }
+                }
+
+                if (pendingQueue.length === 0) {
+                    queueTimer = null;
+                    return;
+                }
+
+                const el = pendingQueue.shift();
+                startDiagonalBoxBuild(el);
+
+                // Jeda gelombang lebih halus (190ms) untuk kartu Mentor agar mengalir berurutan
+                const nextDelay = el.dataset.buildSmooth === 'mentor' ? 190 : 300;
+                queueTimer = setTimeout(pumpBuildQueue, nextDelay);
+            }
+
+            function enqueueBuild(el) {
+                if (el.dataset.buildStatus !== 'unbuilt') return;
+                el.dataset.buildStatus = 'queued';
+                pendingQueue.push(el);
+
+                pendingQueue.sort((a, b) => {
+                    const rA = a.getBoundingClientRect();
+                    const rB = b.getBoundingClientRect();
+                    if (Math.abs(rA.top - rB.top) > 25) {
+                        return scrollDir === 'up' ? (rB.top - rA.top) : (rA.top - rB.top);
+                    }
+                    return rA.left - rB.left;
+                });
+
+                if (engineReady && !queueTimer) {
+                    pumpBuildQueue();
+                }
+            }
+
+            function syncViewportElements() {
+                if (!engineReady) return;
+
+                const vh = window.innerHeight;
+                for (let i = 0; i < buildItems.length; i++) {
+                    const el = buildItems[i];
+                    const rect = el.getBoundingClientRect();
+
+                    if (rect.width === 0 && rect.height === 0) continue;
+
+                    const isInsideViewport = rect.bottom > 10 && rect.top < vh - 10;
+                    const isFarOutside = rect.bottom < -120 || rect.top > vh + 120;
+
+                    if (isInsideViewport && el.dataset.buildStatus === 'unbuilt') {
+                        enqueueBuild(el);
+                    } else if (isFarOutside && el.dataset.buildStatus !== 'unbuilt') {
+                        resetElementToUnbuilt(el);
+                    }
+                }
+            }
+
+            window.addEventListener('scroll', () => {
+                const cur = window.scrollY;
+                if (cur > lastScrollY + 1) scrollDir = 'down';
+                else if (cur < lastScrollY - 1) scrollDir = 'up';
+                lastScrollY = cur;
+                syncViewportElements();
+            }, { passive: true });
+
+            window.addEventListener('resize', syncViewportElements, { passive: true });
+            setInterval(syncViewportElements, 250);
+
+
+            /* -----------------------------------------------------------
+             * 4. RENDER LOOP 60FPS: SWARM CURSORS + DIAGONAL BOX DRAWING
+             * ----------------------------------------------------------- */
+            function renderLoop(now) {
                 ctx.clearRect(0, 0, width, height);
 
+                for (let i = activeDragTasks.length - 1; i >= 0; i--) {
+                    const task = activeDragTasks[i];
+                    const el = task.el;
+                    const rect = el.getBoundingClientRect();
+
+                    if (rect.bottom < -140 || rect.top > height + 140) {
+                        resetElementToUnbuilt(el);
+                        continue;
+                    }
+
+                    const elapsed = now - task.startTime;
+                    const totalDuration = task.flyDuration + task.dragDuration + task.holdDuration;
+
+                    if (elapsed < task.flyDuration) {
+                        task.cursorTargetX = rect.left;
+                        task.cursorTargetY = rect.top;
+
+                        ctx.save();
+                        ctx.fillStyle = '#FBBF24';
+                        ctx.strokeStyle = '#165297';
+                        ctx.lineWidth = 1.5;
+                        ctx.beginPath();
+                        ctx.arc(rect.left, rect.top, 4, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.stroke();
+                        ctx.restore();
+
+                    } else if (elapsed < task.flyDuration + task.dragDuration) {
+                        const rawP = (elapsed - task.flyDuration) / task.dragDuration;
+                        const clampedP = Math.min(Math.max(rawP, 0), 1);
+                        const p = task.isSmoothMentor ? easeOutQuart(clampedP) : easeOutCubic(clampedP);
+
+                        const curW = rect.width * p;
+                        const curH = rect.height * p;
+                        const curRight = rect.left + curW;
+                        const curBottom = rect.top + curH;
+
+                        task.cursorTargetX = curRight;
+                        task.cursorTargetY = curBottom;
+                        task.label = `${task.name}  ${Math.round(curW)}×${Math.round(curH)}`;
+
+                        const rightInset = Math.max(0, (1 - p) * 100);
+                        const bottomInset = Math.max(0, (1 - p) * 100);
+                        el.style.clipPath = `inset(0% ${rightInset.toFixed(2)}% ${bottomInset.toFixed(2)}% 0%)`;
+
+                        // Efek mengambang & scale settle ekstra halus khusus kartu Mentor
+                        if (task.isSmoothMentor) {
+                            const liftY = (1 - p) * 18;
+                            const scaleVal = 0.985 + p * 0.015;
+                            el.style.transform = `translateY(${liftY.toFixed(2)}px) scale(${scaleVal.toFixed(4)})`;
+                        }
+
+                        if (p >= 0.40 && !task.textTriggered) {
+                            task.textTriggered = true;
+                            const innerTypes = el.querySelectorAll('[data-type]');
+                            innerTypes.forEach((tEl, idx) => {
+                                startTypeElement(tEl, idx * 140);
+                            });
+                        }
+
+                        // Garis panduan arsitektur (Ruler Guide Lines)
+                        ctx.save();
+                        ctx.strokeStyle = 'rgba(22, 82, 151, 0.12)';
+                        ctx.lineWidth = 1;
+                        ctx.setLineDash([4, 4]);
+                        ctx.beginPath();
+                        ctx.moveTo(rect.left, 0); ctx.lineTo(rect.left, height);
+                        ctx.moveTo(curRight, 0); ctx.lineTo(curRight, height);
+                        ctx.moveTo(0, rect.top); ctx.lineTo(width, rect.top);
+                        ctx.moveTo(0, curBottom); ctx.lineTo(width, curBottom);
+                        ctx.stroke();
+                        ctx.restore();
+
+                        // Kotak seleksi biru + garis diagonal kuning + 4 titik sudut
+                        ctx.save();
+                        ctx.fillStyle = task.isSmoothMentor ? 'rgba(22, 82, 151, 0.04)' : 'rgba(22, 82, 151, 0.055)';
+                        ctx.strokeStyle = '#165297';
+                        ctx.lineWidth = 1.5;
+                        ctx.beginPath();
+                        ctx.rect(rect.left, rect.top, curW, curH);
+                        ctx.fill();
+                        ctx.stroke();
+
+                        ctx.strokeStyle = 'rgba(251, 191, 36, 0.48)';
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.moveTo(rect.left, rect.top);
+                        ctx.lineTo(curRight, curBottom);
+                        ctx.stroke();
+
+                        const handles = [
+                            [rect.left, rect.top],
+                            [curRight, rect.top],
+                            [rect.left, curBottom],
+                            [curRight, curBottom]
+                        ];
+                        handles.forEach(([hx, hy], idx) => {
+                            ctx.fillStyle = (idx === 0 || idx === 3) ? '#FBBF24' : '#FFFFFF';
+                            ctx.strokeStyle = '#165297';
+                            ctx.lineWidth = 1.5;
+                            ctx.fillRect(hx - 3.5, hy - 3.5, 7, 7);
+                            ctx.strokeRect(hx - 3.5, hy - 3.5, 7, 7);
+                        });
+                        ctx.restore();
+
+                    } else if (elapsed < totalDuration) {
+                        if (task.boid) {
+                            task.boid.assignedTask = null;
+                            task.boid = null;
+                        }
+                        el.style.clipPath = 'none';
+                        if (task.isSmoothMentor) {
+                            el.style.transform = '';
+                        }
+
+                        if (!task.textTriggered) {
+                            task.textTriggered = true;
+                            const innerTypes = el.querySelectorAll('[data-type]');
+                            innerTypes.forEach((tEl, idx) => startTypeElement(tEl, idx * 140));
+                        }
+
+                        const holdP = (elapsed - task.flyDuration - task.dragDuration) / task.holdDuration;
+                        const fadeAlpha = Math.max(0, 1 - holdP);
+
+                        ctx.save();
+                        ctx.strokeStyle = `rgba(22, 82, 151, ${0.72 * fadeAlpha})`;
+                        ctx.lineWidth = 1.25;
+                        ctx.strokeRect(rect.left, rect.top, rect.width, rect.height);
+
+                        const corners = [
+                            [rect.left, rect.top],
+                            [rect.right, rect.top],
+                            [rect.left, rect.bottom],
+                            [rect.right, rect.bottom]
+                        ];
+                        corners.forEach(([cx, cy]) => {
+                            ctx.fillStyle = `rgba(251, 191, 36, ${fadeAlpha})`;
+                            ctx.strokeStyle = `rgba(22, 82, 151, ${fadeAlpha})`;
+                            ctx.lineWidth = 1.2;
+                            ctx.fillRect(cx - 3, cy - 3, 6, 6);
+                            ctx.strokeRect(cx - 3, cy - 3, 6, 6);
+                        });
+                        ctx.restore();
+
+                    } else {
+                        if (task.boid) {
+                            task.boid.assignedTask = null;
+                        }
+                        el.style.clipPath = 'none';
+                        if (task.isSmoothMentor) {
+                            el.style.transform = '';
+                        }
+                        el.dataset.buildStatus = 'done';
+                        activeDragTasks.splice(i, 1);
+                    }
+                }
+
+                // Update & gambar kawanan Swarm Cursors
                 for (let i = 0; i < boids.length; i++) {
                     boids[i].update(boids);
-                    for (let j = i + 1; j < boids.length; j++) {
-                        const dx = boids[i].x - boids[j].x;
-                        const dy = boids[i].y - boids[j].y;
-                        const dist = Math.hypot(dx, dy);
-                        if (dist < 65) {
-                            const alpha = (1 - dist / 65) * 0.15;
-                            ctx.strokeStyle = `rgba(22, 82, 151, ${alpha})`;
-                            ctx.lineWidth = 0.8;
-                            ctx.beginPath();
-                            ctx.moveTo(boids[i].x, boids[i].y);
-                            ctx.lineTo(boids[j].x, boids[j].y);
-                            ctx.stroke();
+
+                    if (swarmMode === 'interactive' && !boids[i].assignedTask) {
+                        for (let j = i + 1; j < boids.length; j++) {
+                            if (boids[j].assignedTask) continue;
+                            const dx = boids[i].x - boids[j].x;
+                            const dy = boids[i].y - boids[j].y;
+                            const dist = Math.hypot(dx, dy);
+                            if (dist < 68) {
+                                const alpha = (1 - dist / 68) * 0.14;
+                                ctx.strokeStyle = `rgba(22, 82, 151, ${alpha})`;
+                                ctx.lineWidth = 0.8;
+                                ctx.beginPath();
+                                ctx.moveTo(boids[i].x, boids[i].y);
+                                ctx.lineTo(boids[j].x, boids[j].y);
+                                ctx.stroke();
+                            }
                         }
                     }
+
                     boids[i].draw();
                 }
 
-                requestAnimationFrame(animateSwarm);
+                requestAnimationFrame(renderLoop);
             }
-            animateSwarm();
+            requestAnimationFrame(renderLoop);
 
 
             /* -----------------------------------------------------------
-             * 2. LIVE TYPEWRITER ANIMATION (Keduanya Looping)
+             * 5. PRELOADER CHOREOGRAPHY -> MULAI BUILD HALAMAN
              * ----------------------------------------------------------- */
-            // A. Headline Utama Looping ("Wujudkan Ide Gilamu Menjadi Nyata")
-            const mainHeadlineText = "Wujudkan Ide Gilamu Menjadi Nyata";
-            const heroTypewriterEl = document.getElementById('hero-typewriter');
-            let mainCharIndex = 0;
-            let isMainDeleting = false;
+            const preloader = document.getElementById('ucic-preloader');
+            const preloaderBar = document.getElementById('preloader-bar');
+            const preloaderStatus = document.getElementById('preloader-status');
 
-            function loopMainHeadline() {
-                if (isMainDeleting) {
-                    mainCharIndex--;
-                    heroTypewriterEl.textContent = mainHeadlineText.substring(0, mainCharIndex);
-                } else {
-                    mainCharIndex++;
-                    heroTypewriterEl.textContent = mainHeadlineText.substring(0, mainCharIndex);
-                }
+            setTimeout(() => {
+                preloaderBar.style.transition = 'width 0.9s cubic-bezier(0.22, 1, 0.36, 1)';
+                preloaderBar.style.width = '100%';
+            }, 60);
 
-                let mainSpeed = isMainDeleting ? 32 : 65;
+            setTimeout(() => {
+                preloaderStatus.textContent = 'DRAGGING & BUILDING UI...';
+            }, 680);
 
-                if (!isMainDeleting && mainCharIndex === mainHeadlineText.length) {
-                    mainSpeed = 2600; // Jeda baca saat kalimat selesai diketik
-                    isMainDeleting = true;
-                } else if (isMainDeleting && mainCharIndex === 0) {
-                    isMainDeleting = false;
-                    mainSpeed = 450; // Jeda singkat sebelum mengetik ulang
-                }
+            setTimeout(() => {
+                preloader.style.opacity = '0';
+                setTimeout(() => {
+                    preloader.style.display = 'none';
+                }, 400);
 
-                setTimeout(loopMainHeadline, mainSpeed);
-            }
-            loopMainHeadline();
+                swarmMode = 'interactive';
+                boids.forEach((b) => b.scatterFromCenter());
+                canvas.classList.remove('z-[60]');
+                canvas.classList.add('z-40');
 
-            // B. Sub-teks Dinamis Looping
-            const subPhrases = [
-                "untuk Event Kampus.",
-                "untuk Brand Activation.",
-                "untuk Bisnis Sewa Booth.",
-                "untuk Pop-Up Kemitraan B2B."
-            ];
-            const subTypewriterEl = document.getElementById('sub-typewriter');
-            let phraseIndex = 0;
-            let subCharIndex = 0;
-            let isDeleting = false;
-
-            function typeSubPhrases() {
-                const currentPhrase = subPhrases[phraseIndex];
-                if (isDeleting) {
-                    subCharIndex--;
-                    subTypewriterEl.textContent = currentPhrase.substring(0, subCharIndex);
-                } else {
-                    subCharIndex++;
-                    subTypewriterEl.textContent = currentPhrase.substring(0, subCharIndex);
-                }
-
-                let speed = isDeleting ? 35 : 70;
-
-                if (!isDeleting && subCharIndex === currentPhrase.length) {
-                    speed = 1800;
-                    isDeleting = true;
-                } else if (isDeleting && subCharIndex === 0) {
-                    isDeleting = false;
-                    phraseIndex = (phraseIndex + 1) % subPhrases.length;
-                    speed = 350;
-                }
-
-                setTimeout(typeSubPhrases, speed);
-            }
-            setTimeout(typeSubPhrases, 800);
+                engineReady = true;
+                syncViewportElements();
+            }, 1100);
 
 
             /* -----------------------------------------------------------
-             * 3. GSAP + SCROLLTRIGGER SUBTLE PARALLAX
+             * 6. GSAP PARALLAX SUBTLE PADA HERO CARD
              * ----------------------------------------------------------- */
             if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
                 gsap.registerPlugin(ScrollTrigger);
@@ -1069,7 +1597,75 @@
 
 
             /* -----------------------------------------------------------
-             * 4. DRAG & DROP FILE UPLOAD PREVIEW & VALIDATION
+             * 7. LIVE TYPEWRITER LOOPING PADA HEADLINE & SUB-HEADLINE HERO
+             * ----------------------------------------------------------- */
+            const mainHeadlineText = "Wujudkan Ide Gilamu Menjadi Nyata";
+            const heroTypewriterEl = document.getElementById('hero-typewriter');
+            let mainCharIndex = 0;
+            let isMainDeleting = false;
+
+            function loopMainHeadline() {
+                if (isMainDeleting) {
+                    mainCharIndex--;
+                    heroTypewriterEl.textContent = mainHeadlineText.substring(0, mainCharIndex);
+                } else {
+                    mainCharIndex++;
+                    heroTypewriterEl.textContent = mainHeadlineText.substring(0, mainCharIndex);
+                }
+
+                let mainSpeed = isMainDeleting ? 36 : 72;
+
+                if (!isMainDeleting && mainCharIndex === mainHeadlineText.length) {
+                    mainSpeed = 2800;
+                    isMainDeleting = true;
+                } else if (isMainDeleting && mainCharIndex === 0) {
+                    isMainDeleting = false;
+                    mainSpeed = 500;
+                }
+
+                setTimeout(loopMainHeadline, mainSpeed);
+            }
+            setTimeout(loopMainHeadline, 1900);
+
+            const subPhrases = [
+                "untuk Event Kampus.",
+                "untuk Brand Activation.",
+                "untuk Bisnis Sewa Booth.",
+                "untuk Pop-Up Kemitraan B2B."
+            ];
+            const subTypewriterEl = document.getElementById('sub-typewriter');
+            let phraseIndex = 0;
+            let subCharIndex = 0;
+            let isDeleting = false;
+
+            function typeSubPhrases() {
+                const currentPhrase = subPhrases[phraseIndex];
+                if (isDeleting) {
+                    subCharIndex--;
+                    subTypewriterEl.textContent = currentPhrase.substring(0, subCharIndex);
+                } else {
+                    subCharIndex++;
+                    subTypewriterEl.textContent = currentPhrase.substring(0, subCharIndex);
+                }
+
+                let speed = isDeleting ? 38 : 75;
+
+                if (!isDeleting && subCharIndex === currentPhrase.length) {
+                    speed = 2000;
+                    isDeleting = true;
+                } else if (isDeleting && subCharIndex === 0) {
+                    isDeleting = false;
+                    phraseIndex = (phraseIndex + 1) % subPhrases.length;
+                    speed = 400;
+                }
+
+                setTimeout(typeSubPhrases, speed);
+            }
+            setTimeout(typeSubPhrases, 2300);
+
+
+            /* -----------------------------------------------------------
+             * 8. DRAG & DROP FILE UPLOAD PREVIEW & VALIDATION
              * ----------------------------------------------------------- */
             const fileInput = document.getElementById('proposal_pdf');
             const dropzone = document.getElementById('dropzone');
@@ -1171,7 +1767,7 @@
 
 
             /* -----------------------------------------------------------
-             * 5. AJAX FORM SUBMISSION TO submit.php
+             * 9. AJAX FORM SUBMISSION TO submit.php
              * ----------------------------------------------------------- */
             const form = document.getElementById('proposal-form');
             const submitBtn = document.getElementById('submit-btn');
